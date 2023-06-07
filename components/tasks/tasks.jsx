@@ -53,12 +53,12 @@ const TodoPage = () => {
     }
   };
 
-  const deleteTodo = async (id) => {
+  const deleteTodo = async (index, id) => {
     try {
       const response = await api.deleteTask(id);
       if(response) {
         const updatedTodos = [...todos];
-        updatedTodos.splice(id, 1);
+        updatedTodos.splice(index, 1);
         setTodos(updatedTodos);
       } else {
         alert("failed to delete");
@@ -66,6 +66,7 @@ const TodoPage = () => {
     } catch (error) {
       console.error(error);
     }
+
   };
 
   const toggleComplete = (index) => {
@@ -93,7 +94,7 @@ const TodoPage = () => {
         </button>
       </div>
       <ul>
-        {todos.map((todo) => (
+        {todos.map((todo, index) => (
           <li
             key={todo.id}
             className="flex items-center justify-between border-b border-gray-300 py-2"
@@ -109,7 +110,7 @@ const TodoPage = () => {
             </label>
             <button
               className="text-red-500 hover:text-red-600"
-              onClick={() => deleteTodo(todo.id)}
+              onClick={() => deleteTodo(index, todo.id)}
             >
               Delete
             </button>
