@@ -1,34 +1,78 @@
 'use client'
 import { useState, useEffect } from 'react';
-import TaskService from '@/app/services/TaskService';
+// import TaskService from '@/app/services/TaskService';
+import { TodoistApi } from "@doist/todoist-api-typescript"
+
+const api = new TodoistApi("bb57a7eb53e2d76bb74eebdf165eb66a9764e352");
 
 const TodoPage = () => {
   const [todos, setTodos] = useState([]);
-  const [newTodo, setNewTodo] = useState('');
+  const [newTodo, setNewTodo] = useState([]);
 
-  useEffect(() => {
-    const storedTodos = localStorage.getItem('todos');
-    if (storedTodos) {
-      setTodos(JSON.parse(storedTodos));
+  const fetchData = async () => {
+    try {
+      const response = await api.getTasks();
+      const tasks = response.map(
+        (task) => ({
+          id: task.id,
+          name: task.content,
+          completed: task.isCompleted
+        })
+      );
+      setTodos(tasks);
+    } catch (error) {
+      console.error(error);
     }
+  }
+
+  useEffect( () => {
+    // you can call async/await here so using seperate function
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
+  /* dont need this */
+  // useEffect(() => {
+  //   localStorage.setItem('todos', JSON.stringify(todos));
+  // }, [todos]);
 
-  const addTodo = () => {
+  const addTodo = async () => {
     if (newTodo.trim() !== '') {
-      setTodos([...todos, newTodo]);
+
+      try {
+        const response = await api.addTask(
+          {
+            content: newTodo
+          }
+        )
+        const newTask = {id: response.id, name: newTodo, completed: false};
+        setTodos([...todos, newTask]);
+      } catch (error) {
+        console.error(error);
+      }
       setNewTodo('');
     }
   };
 
-  const deleteTodo = (index) => {
-    const updatedTodos = [...todos];
-    updatedTodos.splice(index, 1);
-    setTodos(updatedTodos);
+  const deleteTodo = async (id) => {
+    try {
+      const response = await api.deleteTask(id);
+      if(response) {
+        const updatedTodos = [...todos];
+        updatedTodos.splice(id, 1);
+        setTodos(updatedTodos);
+      } else {
+        alert("failed to delete");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
+
+  const toggleComplete = (index) => {
+    const updatedTodos = [...todos];
+    updatedTodos[index].completed = !updatedTodos[index].completed;
+    setTodos(updatedTodos);
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -49,15 +93,23 @@ const TodoPage = () => {
         </button>
       </div>
       <ul>
-        {todos.map((todo, index) => (
+        {todos.map((todo) => (
           <li
-            key={index}
+            key={todo.id}
             className="flex items-center justify-between border-b border-gray-300 py-2"
           >
-            {todo}
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={todo.completed}
+                onChange={() => toggleComplete(todo.id)}
+              />
+            {todo.name}
+            </label>
             <button
               className="text-red-500 hover:text-red-600"
-              onClick={() => deleteTodo(index)}
+              onClick={() => deleteTodo(todo.id)}
             >
               Delete
             </button>
