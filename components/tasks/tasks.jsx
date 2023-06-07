@@ -69,10 +69,24 @@ const TodoPage = () => {
 
   };
 
-  const toggleComplete = (index) => {
-    const updatedTodos = [...todos];
-    updatedTodos[index].completed = !updatedTodos[index].completed;
-    setTodos(updatedTodos);
+  const toggleComplete = async (index, id) => {
+    try {
+      const response = await api.getTask(id);
+
+      const responseChange = response.isCompleted 
+      ? await api.reopenTask(id)
+      : await api.closeTask(id)
+      
+      if(responseChange) {
+        const updatedTodos = [...todos];
+        updatedTodos[index].completed = !updatedTodos[index].completed;
+        setTodos(updatedTodos);
+      } else {
+        alert("failed to check/uncheck");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   return (
@@ -104,7 +118,7 @@ const TodoPage = () => {
                 type="checkbox"
                 className="mr-2"
                 checked={todo.completed}
-                onChange={() => toggleComplete(todo.id)}
+                onChange={() => toggleComplete(index, todo.id)}
               />
             {todo.name}
             </label>
